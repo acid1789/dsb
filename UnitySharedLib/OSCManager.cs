@@ -15,7 +15,7 @@ namespace UnitySharedLib
 
 		#region Static Member Varaibles
 		static OSCManager s_Instance;
-		static Socket s_UdpSocket;
+		static Socket s_UdpSendSocket;
 		static Thread s_UDPReceiverThread;
 		static string s_UDPThreadError;
 		static List<OSCMessage> s_PendingMessages;
@@ -119,10 +119,10 @@ namespace UnitySharedLib
 				s_UDPReceiverThread.Abort();
 				s_UDPReceiverThread = null;
 			}
-			if (s_UdpSocket != null)
+			if (s_UdpSendSocket != null)
 			{
-				s_UdpSocket.Close();
-				s_UdpSocket = null;
+				s_UdpSendSocket.Close();
+				s_UdpSendSocket = null;
 			}
 			s_PendingMessageLock.Close();
 			s_Instance = null;
@@ -140,10 +140,14 @@ namespace UnitySharedLib
 
 		public static void SendToAll(OSCMessage messageToSend)
 		{
-			if (s_UdpSocket == null)
-				Thread.Sleep(50);
+			if (s_UdpSendSocket == null)
+			{
+				s_UdpSendSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+				s_UdpSendSocket.EnableBroadcast = true;
+			}
+
 			IPEndPoint target = new IPEndPoint(IPAddress.Broadcast, c_UDPPort);
-			s_UdpSocket.SendTo(messageToSend.ToArray(), target);
+			int sentBytes = s_UdpSendSocket.SendTo(messageToSend.ToArray(), target);
 		}
 		#endregion
 
@@ -151,14 +155,14 @@ namespace UnitySharedLib
 		{
 			try
 			{				
-				s_UdpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-				s_UdpSocket.Bind(new IPEndPoint(IPAddress.Any, c_UDPPort));
+				Socket udpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+				udpSocket.Bind(new IPEndPoint(IPAddress.Any, c_UDPPort));
 
 				EndPoint remoteEP = new IPEndPoint(IPAddress.Any, 0);
 				byte[] incommingData = new byte[65535];
 				while (true)
 				{					
-					int bytesReceived = s_UdpSocket.ReceiveFrom(incommingData, ref remoteEP);
+					int bytesReceived = udpSocket.ReceiveFrom(incommingData, ref remoteEP);
 					IPEndPoint ipep = (IPEndPoint)remoteEP;
 					OSCMessage msg = OSCMessage.FromData(incommingData, bytesReceived, ipep.Address.ToString());
 					s_PendingMessageLock.WaitOne();

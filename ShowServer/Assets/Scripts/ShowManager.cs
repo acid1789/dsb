@@ -26,7 +26,12 @@ public class ShowManager : MonoBehaviour {
 		}
 
 	}
-	
+
+	private void OnApplicationQuit()
+	{
+		OSCManager.Shutdown();
+	}
+
 	// Update is called once per frame
 	void Update ()
 	{
