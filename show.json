@@ -1,0 +1,23 @@
+{
+	"eventGroups": [
+
+		{
+			"name": "Start Show",
+			"stopCondition": {
+				"type": "trigger",
+				"subtype": "gesture",
+				"arg1": "startGesture"
+			},
+			"events": [
+				{
+					"action": "loadScene",
+					"arg1": "0"
+				},
+				{
+					"action": "showObject",
+					"arg1": "initialShowObject"
+				}
+			]
+		}
+	]
+}
