@@ -114,6 +114,17 @@ namespace UnitySharedLib
 
 		public static void Shutdown()
 		{
+			if (s_UDPReceiverThread != null)
+			{
+				s_UDPReceiverThread.Abort();
+				s_UDPReceiverThread = null;
+			}
+			if (s_UdpSocket != null)
+			{
+				s_UdpSocket.Close();
+				s_UdpSocket = null;
+			}
+			s_PendingMessageLock.Close();
 			s_Instance = null;
 		}
 
@@ -139,7 +150,7 @@ namespace UnitySharedLib
 		static void UDPReceiverThread()
 		{
 			try
-			{
+			{				
 				s_UdpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
 				s_UdpSocket.Bind(new IPEndPoint(IPAddress.Any, c_UDPPort));
 

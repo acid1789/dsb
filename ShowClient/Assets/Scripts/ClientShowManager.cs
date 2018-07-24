@@ -23,7 +23,12 @@ public class ClientShowManager : MonoBehaviour {
 			Debug.LogError(ex.ToString());
 		}
 	}
-	
+
+	private void OnApplicationQuit()
+	{
+		OSCManager.Shutdown();
+	}
+
 	// Update is called once per frame
 	void Update ()
 	{
@@ -44,7 +49,7 @@ public class ClientShowManager : MonoBehaviour {
 	{
 		if ((System.DateTime.Now - _lastServerSearchTime).TotalSeconds > 2.5)
 		{
-			OSCManager.SendToAll(new OSCMessage("/unity/client/findShow", (object)_clientConfig.id));
+			//OSCManager.SendToAll(new OSCMessage("/unity/client/findShow", (object)_clientConfig.id));
 			_lastServerSearchTime = System.DateTime.Now;
 		}
 	}
