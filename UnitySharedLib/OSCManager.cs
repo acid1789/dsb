@@ -156,25 +156,30 @@ namespace UnitySharedLib
 		static void UDPReceiverThread()
 		{
 			try
-			{				
-				Socket udpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-				udpSocket.Bind(new IPEndPoint(IPAddress.Any, c_UDPPort));
+			{
+				UdpClient udpClient = new UdpClient();
+				udpClient.Client.Bind(new IPEndPoint(IPAddress.Any, c_UDPPort));
+				udpClient.EnableBroadcast = true;
 
-				EndPoint remoteEP = new IPEndPoint(IPAddress.Any, 0);
-				byte[] incommingData = new byte[65535];
+				IPEndPoint remoteEP = new IPEndPoint(IPAddress.Any, c_UDPPort);
 				while (true)
-				{					
-					int bytesReceived = udpSocket.ReceiveFrom(incommingData, ref remoteEP);
-					IPEndPoint ipep = (IPEndPoint)remoteEP;
-					OSCMessage msg = OSCMessage.FromData(incommingData, bytesReceived, ipep.Address.ToString());
-					s_PendingMessageLock.WaitOne();
-					s_PendingMessages.Add(msg);
-					s_PendingMessageLock.ReleaseMutex();
+				{
+					if (udpClient.Available > 0)
+					{
+						byte[] incommingData = udpClient.Receive(ref remoteEP);
+
+						OSCMessage msg = OSCMessage.FromData(incommingData, incommingData.Length, remoteEP.Address.ToString());
+						s_PendingMessageLock.WaitOne();
+						s_PendingMessages.Add(msg);
+						s_PendingMessageLock.ReleaseMutex();
+					}
+					Thread.Sleep(10);
 				}
 			}
 			catch (Exception ex)
 			{
 				s_UDPThreadError = ex.ToString();
+				SharedLogger.Print(SharedLogger.MessageType.Error, "UDP Receive Thread Error\n" + ex.ToString());
 			}
 		}
 
@@ -185,6 +190,11 @@ namespace UnitySharedLib
 			public OSCTreeNode Parent;
 			public List<OSCTreeNode> Children;
 			public List<OSCMessageHandler> Handlers;
+
+			public override string ToString()
+			{
+				return string.Format("{0} ({1})", NodeName, Children.Count);
+			}
 		}
 	}
 }

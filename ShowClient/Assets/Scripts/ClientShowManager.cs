@@ -3,14 +3,15 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnitySharedLib;
 
-public class ClientShowManager : MonoBehaviour {
+public class ClientShowManager : MonoBehaviour
+{
 
 	string _serverAddress;
 	System.DateTime _lastServerSearchTime;
 	ClientConfig _clientConfig;
 
 	// Use this for initialization
-	void Start ()
+	void Start()
 	{
 		OSCManager.Initialize();
 		OSCManager.ListenToAddress("/unity/server/status", OnServerStatus);
@@ -30,10 +31,9 @@ public class ClientShowManager : MonoBehaviour {
 	}
 
 	// Update is called once per frame
-	void Update ()
+	void Update()
 	{
 		OSCManager.Update();
-
 
 		if (string.IsNullOrEmpty(_serverAddress))
 		{
@@ -42,7 +42,7 @@ public class ClientShowManager : MonoBehaviour {
 		else
 		{
 			UpdateShow();
-		}		
+		}
 	}
 
 	void UpdateFindServer()
