@@ -15,6 +15,7 @@ public class ShowManager : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
+		SharedLogger.ListenToMessages(LogMessageHandler);
 		OSCManager.Initialize();
 
 		_currentStep = -1;
@@ -60,5 +61,25 @@ public class ShowManager : MonoBehaviour {
 	void LoadJSON(string json)
 	{
 		_config = JsonUtility.FromJson<ShowConfig>(json);
+	}
+
+	void LogMessageHandler(SharedLogger.MessageType type, string message)
+	{
+		switch (type)
+		{
+			case SharedLogger.MessageType.Debug:
+				if (Debug.isDebugBuild)
+					Debug.Log(message);
+				break;
+			case SharedLogger.MessageType.Info:
+				Debug.Log(message);
+				break;
+			case SharedLogger.MessageType.Warning:
+				Debug.LogWarning(message);
+				break;
+			case SharedLogger.MessageType.Error:
+				Debug.LogError(message);
+				break;
+		}
 	}
 }

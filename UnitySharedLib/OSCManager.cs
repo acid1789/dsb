@@ -146,8 +146,10 @@ namespace UnitySharedLib
 				s_UdpSendSocket.EnableBroadcast = true;
 			}
 
-			IPEndPoint target = new IPEndPoint(IPAddress.Broadcast, c_UDPPort);
+			//IPEndPoint target = new IPEndPoint(IPAddress.Broadcast, c_UDPPort);
+			IPEndPoint target = new IPEndPoint(new IPAddress(new byte[] { 192, 168, 0, 255 }), c_UDPPort);
 			int sentBytes = s_UdpSendSocket.SendTo(messageToSend.ToArray(), target);
+			SharedLogger.Print(SharedLogger.MessageType.Debug, "Sent {0} bytes to broadcast port: {1}", sentBytes, c_UDPPort);
 		}
 		#endregion
 
