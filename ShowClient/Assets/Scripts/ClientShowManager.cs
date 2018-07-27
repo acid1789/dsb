@@ -8,7 +8,6 @@ public class ClientShowManager : MonoBehaviour
 {
 
 	string _serverAddress;
-	System.DateTime _lastServerSearchTime;
 	ClientConfig _clientConfig;
 
 	// Use this for initialization
@@ -40,22 +39,9 @@ public class ClientShowManager : MonoBehaviour
 	{
 		OSCManager.Update();
 
-		if (string.IsNullOrEmpty(_serverAddress))
-		{
-			UpdateFindServer();
-		}
-		else
-		{
+		if (!string.IsNullOrEmpty(_serverAddress))
+		{			
 			UpdateShow();
-		}
-	}
-
-	void UpdateFindServer()
-	{
-		if ((System.DateTime.Now - _lastServerSearchTime).TotalSeconds > 2.5)
-		{
-			//OSCManager.SendToAll(new OSCMessage("/unity/client/findShow", (object)_clientConfig.id));
-			_lastServerSearchTime = System.DateTime.Now;
 		}
 	}
 
@@ -65,7 +51,11 @@ public class ClientShowManager : MonoBehaviour
 
 	void OnServerStatus(OSCMessage msg)
 	{
-		_serverAddress = msg.From;
+		if (_serverAddress == null)
+		{
+			_serverAddress = msg.From;
+			OSCManager.SendTo(new OSCMessage("/unity/client/show/join", 0), msg.From);
+		}
 	}
 
 	void OnLoadScene(OSCMessage msg)
