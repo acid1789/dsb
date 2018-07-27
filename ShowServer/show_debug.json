@@ -26,7 +26,7 @@
 			"events": [
 				{
 					"action": "showObject",
-					"arg1": "TestObject2"
+					"arg1": "TestObject1"
 				}
 			],
 			"stopCondition": {
