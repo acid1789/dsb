@@ -80,7 +80,16 @@ public class ClientShowManager : MonoBehaviour
 			bool show = msg.Address.EndsWith("showObject");
 			Debug.LogFormat("{0} object: {1}", show ? "Showing" : "Hiding", theObject);
 
-			GameObject obj = GameObject.Find(theObject);
+			GameObject obj = null;
+			ShowObject[] objects = Resources.FindObjectsOfTypeAll<ShowObject>();
+			foreach (ShowObject so in objects)
+			{
+				if (so.gameObject.name == theObject)
+				{
+					obj = so.gameObject;
+					break;
+				}
+			}
 			if (obj == null)
 				Debug.LogErrorFormat("Failed to find object {0} in scene", theObject);
 			else

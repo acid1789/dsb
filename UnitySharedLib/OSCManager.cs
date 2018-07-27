@@ -159,7 +159,7 @@ namespace UnitySharedLib
 			IPAddress addr = IPAddress.Parse(targetIP);
 			IPEndPoint target = new IPEndPoint(addr, c_UDPPort);
 			int sentBytes = s_UdpSendSocket.SendTo(messageToSend.ToArray(), target);
-			SharedLogger.Print(SharedLogger.MessageType.Debug, "Sent {0} bytes to {1}:{2}", sentBytes, targetIP, c_UDPPort);
+			//SharedLogger.Print(SharedLogger.MessageType.Debug, "Sent {0} bytes to {1}:{2}", sentBytes, targetIP, c_UDPPort);
 		}
 		#endregion
 
