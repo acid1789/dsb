@@ -10,7 +10,7 @@ namespace UnitySharedLib
 {
 	public class OSCManager
 	{
-		public delegate void OSCMessageHandler(OSCMessage msg);
+		public delegate bool OSCMessageHandler(OSCMessage msg);
 		const int c_UDPPort = 9876;
 
 		#region Static Member Varaibles
@@ -42,14 +42,29 @@ namespace UnitySharedLib
 				s_PendingMessages.Clear();
 				s_PendingMessageLock.ReleaseMutex();
 
-				foreach (OSCMessage msg in messages)
+				int breakIndex = -1;
+				for( int i = 0; i < messages.Length; i++ )
 				{
-					OSCTreeNode node = GetLeaf(msg.Address, false);
+					OSCMessage msg = messages[i];
+					OSCTreeNode node = GetLeaf(msg.Address, false);					
 					if (node != null)
 					{
 						foreach (OSCMessageHandler handler in node.Handlers)
-							handler(msg);
+						{
+							if (!handler(msg))
+								breakIndex = i + 1;
+						}
 					}
+					if (breakIndex >= 0)
+						break;
+				}
+
+				if (breakIndex >= 0)
+				{
+					s_PendingMessageLock.WaitOne();
+					for (int i = messages.Length - 1; i >= breakIndex; i--)
+						s_PendingMessages.Insert(0, messages[i]);
+					s_PendingMessageLock.ReleaseMutex();
 				}
 			}
 		}

@@ -10,6 +10,8 @@ public class ClientShowManager : MonoBehaviour
 	string _serverAddress;
 	ClientConfig _clientConfig;
 
+	AsyncOperation _pendingSceneLoad;
+
 	// Use this for initialization
 	void Start()
 	{
@@ -37,28 +39,26 @@ public class ClientShowManager : MonoBehaviour
 	// Update is called once per frame
 	void Update()
 	{
-		OSCManager.Update();
-
-		if (!string.IsNullOrEmpty(_serverAddress))
-		{			
-			UpdateShow();
+		if (_pendingSceneLoad != null && _pendingSceneLoad.isDone)
+		{
+			_pendingSceneLoad = null;
 		}
+		
+		if( _pendingSceneLoad == null )
+			OSCManager.Update();	// Only process packets if pending scene loads are all done
 	}
-
-	void UpdateShow()
-	{
-	}
-
-	void OnServerStatus(OSCMessage msg)
+	
+	bool OnServerStatus(OSCMessage msg)
 	{
 		if (_serverAddress == null)
 		{
 			_serverAddress = msg.From;
 			OSCManager.SendTo(new OSCMessage("/unity/client/show/join", 0), msg.From);
 		}
+		return true;
 	}
 
-	void OnLoadScene(OSCMessage msg)
+	bool OnLoadScene(OSCMessage msg)
 	{
 		if (msg.Args == null || msg.Args.Length < 1)
 			Debug.LogError("Load scene message received with no argument!");
@@ -66,11 +66,13 @@ public class ClientShowManager : MonoBehaviour
 		{
 			string sceneToLoad = (string)msg.Args[0];
 			Debug.Log("Loading scene: " + sceneToLoad);
-			SceneManager.LoadScene(sceneToLoad, LoadSceneMode.Single);
+			_pendingSceneLoad = SceneManager.LoadSceneAsync(sceneToLoad, LoadSceneMode.Single);
+			return false;
 		}
+		return true;
 	}
 
-	void OnShowHideObject(OSCMessage msg)
+	bool OnShowHideObject(OSCMessage msg)
 	{
 		if (msg.Args == null || msg.Args.Length < 1)
 			Debug.LogError("showObject/hideObject message received with no argument!");
@@ -95,5 +97,6 @@ public class ClientShowManager : MonoBehaviour
 			else
 				obj.SetActive(show);
 		}
+		return true;
 	}
 }

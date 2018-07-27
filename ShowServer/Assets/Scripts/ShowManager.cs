@@ -221,7 +221,7 @@ public class ShowManager : MonoBehaviour
 			Show_ExecuteStep();
 	}
 
-	void OnJoinShow(OSCMessage msg)
+	bool OnJoinShow(OSCMessage msg)
 	{
 		int clientId = -1;
 		if (msg.Args != null && msg.Args.Length > 0)
@@ -251,7 +251,7 @@ public class ShowManager : MonoBehaviour
 				}
 			}
 		}
-		
+		return true;
 	}
 
 	void LogMessageHandler(SharedLogger.MessageType type, string message)
