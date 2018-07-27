@@ -138,18 +138,28 @@ namespace UnitySharedLib
 			s_Instance.ListenToAddressInternal(address, handler);
 		}
 
+		public static void SendToAll(string address, params object[] args)
+		{
+			SendToAll(new OSCMessage(address, args));
+		}
+
 		public static void SendToAll(OSCMessage messageToSend)
+		{
+			SendTo(messageToSend, "255.255.255.255");
+		}
+
+		public static void SendTo(OSCMessage messageToSend, string targetIP)
 		{
 			if (s_UdpSendSocket == null)
 			{
 				s_UdpSendSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
 				s_UdpSendSocket.EnableBroadcast = true;
 			}
-
-			//IPEndPoint target = new IPEndPoint(IPAddress.Broadcast, c_UDPPort);
-			IPEndPoint target = new IPEndPoint(new IPAddress(new byte[] { 192, 168, 0, 255 }), c_UDPPort);
+			
+			IPAddress addr = IPAddress.Parse(targetIP);
+			IPEndPoint target = new IPEndPoint(addr, c_UDPPort);
 			int sentBytes = s_UdpSendSocket.SendTo(messageToSend.ToArray(), target);
-			SharedLogger.Print(SharedLogger.MessageType.Debug, "Sent {0} bytes to broadcast port: {1}", sentBytes, c_UDPPort);
+			SharedLogger.Print(SharedLogger.MessageType.Debug, "Sent {0} bytes to {1}:{2}", sentBytes, targetIP, c_UDPPort);
 		}
 		#endregion
 

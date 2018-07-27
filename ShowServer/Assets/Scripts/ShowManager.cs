@@ -15,6 +15,7 @@ public class ShowManager : MonoBehaviour
 
 
 	ShowConfig _theShow;
+	int _lastSceneMarker;
 	string _waitingForTrigger;
 	string _waitingForGesture;
 	double _timerSeconds;
@@ -27,6 +28,7 @@ public class ShowManager : MonoBehaviour
 	{
 		SharedLogger.ListenToMessages(LogMessageHandler);
 		OSCManager.Initialize();
+		OSCManager.ListenToAddress("/unity/client/show/join", OnJoinShow);
 
 		if (Debug.isDebugBuild && File.Exists("show_debug.json"))
 			LoadJSON(File.ReadAllText("show_debug.json"));
@@ -96,6 +98,7 @@ public class ShowManager : MonoBehaviour
 	void LoadJSON(string json)
 	{
 		_theShow = JsonUtility.FromJson<ShowConfig>(json);
+		_lastSceneMarker = 0;
 		Show_ExecuteStep();
 	}
 
@@ -154,16 +157,17 @@ public class ShowManager : MonoBehaviour
 		switch (evt.action)
 		{
 			case "loadScene":
-				OSCManager.SendToAll(new OSCMessage("/unity/server/show/loadScene", evt.arg1));
 				Debug.Log("SHOW - Loading scene: " + evt.arg1);
+				_lastSceneMarker = _theShow.currentEventGroupIndex - 1;
+				OSCManager.SendToAll(new OSCMessage("/unity/server/show/loadScene", evt.arg1));				
 				break;
 			case "showObject":
-				OSCManager.SendToAll(new OSCMessage("/unity/server/show/showObject", evt.arg1));
 				Debug.Log("SHOW - showObject: " + evt.arg1);
+				OSCManager.SendToAll(new OSCMessage("/unity/server/show/showObject", evt.arg1));
 				break;
 			case "hideObject":
-				OSCManager.SendToAll(new OSCMessage("/unity/server/show/hideObject", evt.arg1));
 				Debug.Log("SHOW - hideObject: " + evt.arg1);
+				OSCManager.SendToAll(new OSCMessage("/unity/server/show/hideObject", evt.arg1));
 				break;
 			case "goto":
 				Debug.Log("SHOW - goto: " + evt.arg1);
@@ -215,6 +219,39 @@ public class ShowManager : MonoBehaviour
 	{
 		if (_waitingForTrigger != null && _waitingForTrigger == trigger)
 			Show_ExecuteStep();
+	}
+
+	void OnJoinShow(OSCMessage msg)
+	{
+		int clientId = -1;
+		if (msg.Args != null && msg.Args.Length > 0)
+			clientId = (int)msg.Args[0];
+
+		// This client is just joining right now, send them everything from the last scene load up until the current step
+		for (int i = _lastSceneMarker; i < _theShow.currentEventGroupIndex; i++)
+		{
+			EventGroup eg = _theShow.eventGroups[i];
+			foreach (Event evt in eg.events)
+			{
+				switch (evt.action)
+				{
+					case "loadScene":
+						Debug.LogFormat("SHOW - Sending Loading scene: {0} to client: ({2}){1} ", evt.arg1, msg.From, clientId);
+						_lastSceneMarker = _theShow.currentEventGroupIndex - 1;
+						OSCManager.SendTo(new OSCMessage("/unity/server/show/loadScene", evt.arg1), msg.From);
+						break;
+					case "showObject":
+						Debug.LogFormat("SHOW - Sending showObject: {0} to cleint: ({2}){1} ", evt.arg1, msg.From, clientId);
+						OSCManager.SendTo(new OSCMessage("/unity/server/show/showObject", evt.arg1), msg.From);
+						break;
+					case "hideObject":
+						Debug.LogFormat("SHOW - Sending hideObject: {0} to cleint: ({2}){1} ", evt.arg1, msg.From, clientId);
+						OSCManager.SendTo(new OSCMessage("/unity/server/show/hideObject", evt.arg1), msg.From);
+						break;
+				}
+			}
+		}
+		
 	}
 
 	void LogMessageHandler(SharedLogger.MessageType type, string message)
