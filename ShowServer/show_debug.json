@@ -1,21 +1,144 @@
 {
 	"eventGroups": [
-
 		{
 			"name": "Start Show",
-			"stopCondition": {
-				"type": "trigger",
-				"subtype": "gesture",
-				"arg1": "startGesture"
-			},
 			"events": [
 				{
 					"action": "loadScene",
-					"arg1": "0"
+					"arg1": "TestScene1"
 				},
 				{
+					"action": "hideObject",
+					"arg1": "TestObject1"
+				},
+				{
+					"action": "hideObject",
+					"arg1": "TestObject2"
+				}
+			],
+			"stopCondition": {
+				"type": "gesture",
+				"arg1": "startGesture"
+			}
+		},
+		{
+			"name": "TS1_ShowObj1",
+			"events": [
+				{
 					"action": "showObject",
-					"arg1": "initialShowObject"
+					"arg1": "TestObject2"
+				}
+			],
+			"stopCondition": {
+				"type": "timer",
+				"arg1": "12:321"
+			}
+		},
+		{
+			"name": "TS1_ShowObj2",
+			"events": [
+				{
+					"action": "showObject",
+					"arg1": "TestObject2"
+				}
+			],
+			"stopCondition": {
+				"type": "trigger",
+				"arg1": "ExitTrigger"
+			}
+		},
+		{
+			"name": "TS2_Load",
+			"events": [
+				{
+					"action": "loadScene",
+					"arg1": "TestScene2"
+				},
+				{
+					"action": "hideObject",
+					"arg1": "TestObject1"
+				},
+				{
+					"action": "hideObject",
+					"arg1": "TestObject2"
+				}
+			],
+			"stopCondition": {
+				"type": "gesture",
+				"arg1": "runScene2"
+			}
+		},
+		{
+			"name": "TS2_ShowObj1",
+			"events": [
+				{
+					"action": "showObject",
+					"arg1": "TestObject1"
+				}
+			],
+			"stopCondition": {
+				"type": "timer",
+				"arg1": "1:16:235"
+			}
+		},
+		{
+			"name": "TS2_ShowObj2",
+			"events": [
+				{
+					"action": "showObject",
+					"arg1": "TestObject2"
+				}
+			],
+			"stopCondition": {
+				"type": "timer",
+				"arg1": "1300"
+			}
+		},
+		{
+			"name": "TS3_Load",
+			"events": [
+				{
+					"action": "loadScene",
+					"arg1": "TestScene3"
+				}
+			],
+			"stopCondition": {
+				"type": "timer",
+				"arg1": "15:000"
+			}
+		},
+		{
+			"name": "TS3_TestObject1",
+			"events": [
+				{
+					"action": "showObject",
+					"arg1": "TestObject1"
+				}
+			],
+			"stopCondition": {
+				"type": "gesture",
+				"arg1": "doBallDrop"
+			}
+		},
+		{
+			"name": "TS3_BallDrop",
+			"events": [
+				{
+					"action": "showObject",
+					"arg1": "TestObject2"
+				}
+			],
+			"stopCondition": {
+				"type": "gesture",
+				"arg1": "doneWithBalls"
+			}
+		},
+		{
+			"name": "Restart Show",
+			"events": [
+				{
+					"action": "goto",
+					"arg1": "Start Show"
 				}
 			]
 		}
