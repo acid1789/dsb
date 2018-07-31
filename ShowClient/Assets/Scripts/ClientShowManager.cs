@@ -16,7 +16,7 @@ public class ClientShowManager : MonoBehaviour
 	void Start()
 	{
 		DontDestroyOnLoad(gameObject);
-		OSCManager.Initialize();
+		OSCManager.Initialize("239.1.2.3");
 		OSCManager.ListenToAddress("/unity/server/status", OnServerStatus);
 		OSCManager.ListenToAddress("/unity/server/show/loadScene", OnLoadScene);
 		OSCManager.ListenToAddress("/unity/server/show/showObject", OnShowHideObject);

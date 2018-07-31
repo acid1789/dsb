@@ -27,7 +27,7 @@ public class ShowManager : MonoBehaviour
 	void Start()
 	{
 		SharedLogger.ListenToMessages(LogMessageHandler);
-		OSCManager.Initialize();
+		OSCManager.Initialize("239.1.2.3");
 		OSCManager.ListenToAddress("/unity/client/show/join", OnJoinShow);
 
 		if (Debug.isDebugBuild && File.Exists("show_debug.json"))

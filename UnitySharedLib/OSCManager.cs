@@ -11,9 +11,12 @@ namespace UnitySharedLib
 	public class OSCManager
 	{
 		public delegate bool OSCMessageHandler(OSCMessage msg);
-		const int c_UDPPort = 9876;
+		const int c_DefaultUdpPort = 9876;
+		const string c_DefaultBroadcastAddress = "255.255.255.255";
 
 		#region Static Member Varaibles
+		static int s_UDPPort;
+		static string s_BroadcastAddress;
 		static OSCManager s_Instance;
 		static Socket s_UdpSendSocket;
 		static Thread s_UDPReceiverThread;
@@ -115,11 +118,13 @@ namespace UnitySharedLib
 		#endregion
 
 		#region Public Static Interface
-		public static void Initialize()
+		public static void Initialize(string broadcastAddress = c_DefaultBroadcastAddress, int udpPort = c_DefaultUdpPort)
 		{
 			if (s_Instance != null)
 				throw new InvalidOperationException("OSCManager is already instantiated!");
 			s_Instance = new OSCManager();
+			s_UDPPort = udpPort;
+			s_BroadcastAddress = broadcastAddress;
 
 			s_PendingMessages = new List<OSCMessage>();
 			s_PendingMessageLock = new Mutex();
@@ -158,21 +163,24 @@ namespace UnitySharedLib
 			SendToAll(new OSCMessage(address, args));
 		}
 
-		public static void SendToAll(OSCMessage messageToSend)
+		public static void SendToAll(OSCMessage messageToSend, int port = 0)
 		{
-			SendTo(messageToSend, "255.255.255.255");
+			SendTo(messageToSend, s_BroadcastAddress, port);
 		}
 
-		public static void SendTo(OSCMessage messageToSend, string targetIP)
+		public static void SendTo(OSCMessage messageToSend, string targetIP, int port = 0)
 		{
 			if (s_UdpSendSocket == null)
 			{
 				s_UdpSendSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
 				s_UdpSendSocket.EnableBroadcast = true;
 			}
+
+			if (port == 0)
+				port = s_UDPPort;
 			
 			IPAddress addr = IPAddress.Parse(targetIP);
-			IPEndPoint target = new IPEndPoint(addr, c_UDPPort);
+			IPEndPoint target = new IPEndPoint(addr, port);
 			int sentBytes = s_UdpSendSocket.SendTo(messageToSend.ToArray(), target);
 			//SharedLogger.Print(SharedLogger.MessageType.Debug, "Sent {0} bytes to {1}:{2}", sentBytes, targetIP, c_UDPPort);
 		}
@@ -183,10 +191,13 @@ namespace UnitySharedLib
 			try
 			{
 				UdpClient udpClient = new UdpClient();
-				udpClient.Client.Bind(new IPEndPoint(IPAddress.Any, c_UDPPort));
+				udpClient.Client.Bind(new IPEndPoint(IPAddress.Any, s_UDPPort));
+				
+				if( s_BroadcastAddress != c_DefaultBroadcastAddress )
+					udpClient.JoinMulticastGroup(IPAddress.Parse(s_BroadcastAddress));
 				udpClient.EnableBroadcast = true;
 
-				IPEndPoint remoteEP = new IPEndPoint(IPAddress.Any, c_UDPPort);
+				IPEndPoint remoteEP = new IPEndPoint(IPAddress.Any, s_UDPPort);
 				while (true)
 				{
 					if (udpClient.Available > 0)

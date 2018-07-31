@@ -51,6 +51,8 @@ namespace UnitySharedLib
 						oscw.Write((uint)Arg);
 				}
 			}
+			else
+				oscw.Write(",");
 			return ms.ToArray();
 		}
 
