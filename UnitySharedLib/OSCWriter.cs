@@ -19,7 +19,7 @@ namespace UnitySharedLib
 			base.Write((byte)0);
 			int writtenSize = value.Length + 1;
 			int padding = 4 - (writtenSize % 4);
-			if (padding != 0)
+			if (padding != 0 && padding != 4)
 				base.Write(new byte[padding], 0, padding);
 		}
 
@@ -28,7 +28,7 @@ namespace UnitySharedLib
 			base.Write((int)blob.Length);
 			base.Write(blob, 0, blob.Length);			
 			int padding = 4 - (blob.Length % 4);
-			if( padding != 0 )
+			if (padding != 0 && padding != 4)
 				base.Write(new byte[padding], 0, padding);
 		}
 	}
