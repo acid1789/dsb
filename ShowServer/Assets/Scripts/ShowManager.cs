@@ -12,23 +12,29 @@ public class ShowManager : MonoBehaviour
 	public Text ShowStep_Name;
 	public Text ShowStep_StopCondition;
 	public Text ShowStep_StopConditionSecondary;
+	public int RemoteManagerPort = 19876;
 
 
 	ShowConfig _theShow;
 	int _lastSceneMarker;
 	string _waitingForTrigger;
 	string _waitingForGesture;
+	string _waitingForOSCMessage;
 	double _timerSeconds;
 	System.DateTime _timerMarker;
 
 	System.DateTime _lastStatusTime;
+	Dictionary<int, ClientInfo> _knownClients;
 
 	// Use this for initialization
 	void Start()
 	{
+		_knownClients = new Dictionary<int, ClientInfo>();
+
 		SharedLogger.ListenToMessages(LogMessageHandler);
 		OSCManager.Initialize("239.1.2.3");
 		OSCManager.ListenToAddress("/unity/client/show/join", OnJoinShow);
+		OSCManager.ListenToAddress("/unity/client/status", OnClientStatus);
 
 		if (Debug.isDebugBuild && File.Exists("show_debug.json"))
 			LoadJSON(File.ReadAllText("show_debug.json"));
@@ -48,6 +54,10 @@ public class ShowManager : MonoBehaviour
 	void Update()
 	{
 		OSCManager.Update();
+
+		//OSCManager.Initialize("239.1.2.3");
+		OSCMessage msg4 = new OSCMessage("/oscLibTest", 1, 2.1f, "Hello World");
+		OSCManager.SendToAll(msg4);
 
 		if (_theShow != null)
 		{
@@ -76,6 +86,20 @@ public class ShowManager : MonoBehaviour
 			{
 				if (Input.GetKeyDown(KeyCode.Space))
 					Show_ExecuteStep();
+			}
+		}
+
+		foreach (var kvp in _knownClients)
+		{
+			if ((System.DateTime.Now - kvp.Value.LastSeenTime).TotalSeconds > 5)
+			{
+				// This client hasn't been seen for 5 seconds
+				if ((System.DateTime.Now - kvp.Value.RestartMsgTime).TotalSeconds > 2)
+				{
+					// Its been more than 2 seconds since the restarter was notified, send it again
+					OSCManager.SendTo(new OSCMessage("/unity/client/restart"), kvp.Value.IPAddress, RemoteManagerPort);
+					kvp.Value.RestartMsgTime = System.DateTime.Now;
+				}
 			}
 		}
 	}
@@ -120,7 +144,7 @@ public class ShowManager : MonoBehaviour
 		foreach (Event evt in step.events)
 		{
 			if (!Show_DoEvent(evt))
-				return;	// Event wants to not continue this script path.
+				return; // Event wants to not continue this script path.
 		}
 
 		// If this step doesn't have a stop condition, execute the next step
@@ -145,6 +169,11 @@ public class ShowManager : MonoBehaviour
 					_waitingForGesture = step.stopCondition.arg1;
 					SetSecondaryShowText(_waitingForGesture);
 					break;
+				case "oscMessage":
+					_waitingForOSCMessage = step.stopCondition.arg1;
+					SetSecondaryShowText(_waitingForOSCMessage);
+					OSCManager.ListenToAddress(_waitingForOSCMessage, OnOSCMessage);
+					break;
 				default:
 					Debug.LogError("Unknown stop condition type: " + step.stopCondition.type);
 					break;
@@ -159,7 +188,7 @@ public class ShowManager : MonoBehaviour
 			case "loadScene":
 				Debug.Log("SHOW - Loading scene: " + evt.arg1);
 				_lastSceneMarker = _theShow.currentEventGroupIndex - 1;
-				OSCManager.SendToAll(new OSCMessage("/unity/server/show/loadScene", evt.arg1));				
+				OSCManager.SendToAll(new OSCMessage("/unity/server/show/loadScene", evt.arg1));
 				break;
 			case "showObject":
 				Debug.Log("SHOW - showObject: " + evt.arg1);
@@ -227,6 +256,14 @@ public class ShowManager : MonoBehaviour
 		if (msg.Args != null && msg.Args.Length > 0)
 			clientId = (int)msg.Args[0];
 
+		if (clientId >= 0)
+		{
+			if (!_knownClients.ContainsKey(clientId))
+				_knownClients[clientId] = new ClientInfo(clientId, msg.From);
+			_knownClients[clientId].MarkLastSeen();
+			_knownClients[clientId].IPAddress = msg.From;
+		}
+
 		// This client is just joining right now, send them everything from the last scene load up until the current step
 		for (int i = _lastSceneMarker; i < _theShow.currentEventGroupIndex; i++)
 		{
@@ -251,6 +288,28 @@ public class ShowManager : MonoBehaviour
 				}
 			}
 		}
+		return true;
+	}
+
+	bool OnClientStatus(OSCMessage msg)
+	{
+		int clientId = -1;
+		if (msg.Args != null && msg.Args.Length > 0)
+			clientId = (int)msg.Args[0];
+
+		if (clientId >= 0)
+		{
+			if (!_knownClients.ContainsKey(clientId))
+				_knownClients[clientId] = new ClientInfo(clientId, msg.From);
+			_knownClients[clientId].MarkLastSeen();
+		}
+		return true;
+	}
+
+	bool OnOSCMessage(OSCMessage msg)
+	{
+		OSCManager.ForgetAddress(_waitingForOSCMessage);
+		Show_ExecuteStep();
 		return true;
 	}
 

@@ -11,6 +11,7 @@ public class ClientShowManager : MonoBehaviour
 	ClientConfig _clientConfig;
 
 	AsyncOperation _pendingSceneLoad;
+	System.DateTime _lastStatusTime;
 
 	// Use this for initialization
 	void Start()
@@ -27,6 +28,8 @@ public class ClientShowManager : MonoBehaviour
 		}
 		catch (System.Exception ex)
 		{
+			_clientConfig = new ClientConfig();
+			_clientConfig.id = "-2";
 			Debug.LogError(ex.ToString());
 		}
 	}
@@ -39,6 +42,12 @@ public class ClientShowManager : MonoBehaviour
 	// Update is called once per frame
 	void Update()
 	{
+		if ((System.DateTime.Now - _lastStatusTime).TotalSeconds >= 2)
+		{
+			OSCManager.SendToAll(new OSCMessage("/unity/client/status", _clientConfig.Id));
+			_lastStatusTime = System.DateTime.Now;
+		}
+
 		if (_pendingSceneLoad != null && _pendingSceneLoad.isDone)
 		{
 			_pendingSceneLoad = null;
@@ -53,7 +62,7 @@ public class ClientShowManager : MonoBehaviour
 		if (_serverAddress == null)
 		{
 			_serverAddress = msg.From;
-			OSCManager.SendTo(new OSCMessage("/unity/client/show/join", 0), msg.From);
+			OSCManager.SendTo(new OSCMessage("/unity/client/show/join", _clientConfig.Id), msg.From);
 		}
 		return true;
 	}

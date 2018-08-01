@@ -27,12 +27,14 @@ namespace UnitySharedLib
 
 		#region Internal Member Vairables
 		OSCTreeNode _rootNode;
+		List<string> _removeAddresses;
 		#endregion
 
 		#region Internal Interface
 		private OSCManager()
 		{
 			_rootNode = new OSCTreeNode() { NodeName = "root" };
+			_removeAddresses = new List<string>();
 		}
 
 		void UpdateInternal()
@@ -70,6 +72,14 @@ namespace UnitySharedLib
 					s_PendingMessageLock.ReleaseMutex();
 				}
 			}
+
+			foreach (string remove in _removeAddresses)
+			{
+				OSCTreeNode node = GetLeaf(remove, false);
+				if (node != null)
+					node.Handlers.Clear();
+			}
+			_removeAddresses.Clear();
 		}
 
 		void ListenToAddressInternal(string address, OSCMessageHandler handler)
@@ -77,6 +87,11 @@ namespace UnitySharedLib
 			OSCTreeNode leaf = GetLeaf(address);
 			if (!leaf.Handlers.Contains(handler))
 				leaf.Handlers.Add(handler);
+		}
+
+		void ForgetAddressInternal(string address)
+		{
+			_removeAddresses.Add(address);
 		}
 
 		OSCTreeNode GetLeaf(string address, bool buildTree = true)
@@ -156,6 +171,11 @@ namespace UnitySharedLib
 		public static void ListenToAddress(string address, OSCMessageHandler handler)
 		{
 			s_Instance.ListenToAddressInternal(address, handler);
+		}
+
+		public static void ForgetAddress(string address)
+		{
+			s_Instance.ForgetAddressInternal(address);
 		}
 
 		public static void SendToAll(string address, params object[] args)
