@@ -31,5 +31,50 @@ namespace UnitySharedLib
 			if (padding != 0 && padding != 4)
 				base.Write(new byte[padding], 0, padding);
 		}
+
+		uint swap32(uint val)
+		{
+			return ((val & 0xFF) << 24) | ((val & 0xFF000000) >> 24) | ((val & 0xFF00) << 8) | ((val & 0xFF0000) >> 8);
+		}
+
+		public override void Write(int value)
+		{
+			if (BitConverter.IsLittleEndian)
+				value = (int)swap32((uint)value);
+			base.Write(value);
+		}
+
+		public override void Write(long value)
+		{
+			if (BitConverter.IsLittleEndian)
+			{
+				byte[] bytes = BitConverter.GetBytes(value);
+				Array.Reverse(bytes);
+				value = BitConverter.ToInt64(bytes, 0);
+			}
+			base.Write(value);
+		}
+
+		public override void Write(float value)
+		{
+			if (BitConverter.IsLittleEndian)
+			{
+				byte[] bytes = BitConverter.GetBytes(value);
+				Array.Reverse(bytes);
+				value = BitConverter.ToSingle(bytes, 0);
+			}
+			base.Write(value);
+		}
+
+		public override void Write(double value)
+		{
+			if (BitConverter.IsLittleEndian)
+			{
+				byte[] bytes = BitConverter.GetBytes(value);
+				Array.Reverse(bytes);
+				value = BitConverter.ToSingle(bytes, 0);
+			}
+			base.Write(value);
+		}
 	}
 }

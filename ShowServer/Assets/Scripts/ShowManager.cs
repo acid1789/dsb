@@ -35,6 +35,7 @@ public class ShowManager : MonoBehaviour
 		OSCManager.Initialize("239.1.2.3");
 		OSCManager.ListenToAddress("/unity/client/show/join", OnJoinShow);
 		OSCManager.ListenToAddress("/unity/client/status", OnClientStatus);
+		OSCManager.ListenToAddress("/unity/client/restarting", OnClientRestarting);
 
 		if (Debug.isDebugBuild && File.Exists("show_debug.json"))
 			LoadJSON(File.ReadAllText("show_debug.json"));
@@ -54,10 +55,6 @@ public class ShowManager : MonoBehaviour
 	void Update()
 	{
 		OSCManager.Update();
-
-		//OSCManager.Initialize("239.1.2.3");
-		OSCMessage msg4 = new OSCMessage("/oscLibTest", 1, 2.1f, "Hello World");
-		OSCManager.SendToAll(msg4);
 
 		if (_theShow != null)
 		{
@@ -91,15 +88,19 @@ public class ShowManager : MonoBehaviour
 
 		foreach (var kvp in _knownClients)
 		{
-			if ((System.DateTime.Now - kvp.Value.LastSeenTime).TotalSeconds > 5)
+			if( kvp.Value.Status == ClientInfo.ConnectionStatus.Normal &&
+				((System.DateTime.Now - kvp.Value.LastSeenTime).TotalSeconds > 5))
 			{
 				// This client hasn't been seen for 5 seconds
-				if ((System.DateTime.Now - kvp.Value.RestartMsgTime).TotalSeconds > 2)
-				{
-					// Its been more than 2 seconds since the restarter was notified, send it again
-					OSCManager.SendTo(new OSCMessage("/unity/client/restart"), kvp.Value.IPAddress, RemoteManagerPort);
-					kvp.Value.RestartMsgTime = System.DateTime.Now;
-				}
+				kvp.Value.Status = ClientInfo.ConnectionStatus.NotResponding;
+			}
+
+			if (kvp.Value.Status == ClientInfo.ConnectionStatus.NotResponding && 
+				((System.DateTime.Now - kvp.Value.RestartMsgTime).TotalSeconds > 2) )
+			{
+				// Its been more than 2 seconds since the restarter was notified, send it again
+				OSCManager.SendTo(new OSCMessage("/unity/client/restart"), kvp.Value.IPAddress, RemoteManagerPort);
+				kvp.Value.RestartMsgTime = System.DateTime.Now;
 			}
 		}
 	}
@@ -303,6 +304,19 @@ public class ShowManager : MonoBehaviour
 				_knownClients[clientId] = new ClientInfo(clientId, msg.From);
 			_knownClients[clientId].MarkLastSeen();
 		}
+		return true;
+	}
+
+	bool OnClientRestarting(OSCMessage msg)
+	{
+		foreach (var kvp in _knownClients)
+		{
+			if (kvp.Value.IPAddress == msg.From)
+			{
+				kvp.Value.Status = ClientInfo.ConnectionStatus.Restarting;
+				break;
+			}
+		}		
 		return true;
 	}
 

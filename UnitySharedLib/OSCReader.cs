@@ -86,5 +86,60 @@ namespace UnitySharedLib
 
 			return tags.ToArray();
 		}
+
+		uint swap32(uint val)
+		{
+			return ((val & 0xFF) << 24) | ((val & 0xFF000000) >> 24) | ((val & 0xFF00) << 8) | ((val & 0xFF0000) >> 8);
+		}
+
+		ulong swap64(ulong val)
+		{
+			byte[] bytes = BitConverter.GetBytes(val);
+			Array.Reverse(bytes);
+			val = BitConverter.ToUInt64(bytes, 0);
+			return val;
+		}
+
+		public override int ReadInt32()
+		{
+			int val = base.ReadInt32();
+			if (BitConverter.IsLittleEndian)
+				val = (int)swap32((uint)val);
+			return val;
+		}
+
+		public override float ReadSingle()
+		{
+			float val = base.ReadSingle();
+
+			if (BitConverter.IsLittleEndian)
+			{
+				byte[] bytes = BitConverter.GetBytes(val);
+				Array.Reverse(bytes);
+				val = BitConverter.ToSingle(bytes, 0);
+			}
+			return val;
+		}
+
+		public override long ReadInt64()
+		{
+			long lval = base.ReadInt64();
+			if (BitConverter.IsLittleEndian)
+				lval = (long)swap64((ulong)lval);
+			return lval;
+		}
+
+		public override double ReadDouble()
+		{
+			double val = base.ReadDouble();
+
+			if (BitConverter.IsLittleEndian)
+			{
+				byte[] bytes = BitConverter.GetBytes(val);
+				Array.Reverse(bytes);
+				val = BitConverter.ToSingle(bytes, 0);
+			}
+			return val;
+		}
 	}
 }
