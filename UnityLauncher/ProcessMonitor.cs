@@ -7,7 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using UnitySharedLib;
 
-namespace UnityMonitor
+namespace UnityLauncher
 {
 	class ProcessMonitor
 	{
@@ -15,7 +15,7 @@ namespace UnityMonitor
 		string _processName;
 
 		bool _restartRequested;
-
+		
 		public ProcessMonitor(string processName)
 		{
 			OSCManager.Initialize("255.255.255.255", 19876);
@@ -32,25 +32,34 @@ namespace UnityMonitor
 			_monitorThread.Abort();
 		}
 
+		public string ProcessName { get { return _processName; } }
+
 		public void MonitorThreadProc()
 		{
 			while (true)
 			{
 				OSCManager.Update();
-
-				Process[] processes = Process.GetProcessesByName(_processName);
+				
+				Process[] processes = Process.GetProcessesByName(System.IO.Path.GetFileNameWithoutExtension(_processName));
 				if (processes != null && processes.Length > 0)
 				{
 					foreach (Process p in processes)
 					{
 						if (!p.Responding || _restartRequested)
+						{
 							p.Kill();
+						}
 					}
 				}
 				else
 				{
 					// Didn't find the process, start it now
-					Process.Start(_processName);
+					Process p = new Process();
+					p.StartInfo.FileName = _processName;
+					p.StartInfo.UseShellExecute = true;
+					p.StartInfo.LoadUserProfile = true;
+					p.Start();
+					Thread.Sleep(10000);
 				}
 				_restartRequested = false;				
 

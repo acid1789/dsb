@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("UnityMonitor")]
+[assembly: AssemblyTitle("UnityLauncher")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("UnityMonitor")]
+[assembly: AssemblyProduct("UnityLauncher")]
 [assembly: AssemblyCopyright("Copyright ©  2018")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("2ab6c22c-e559-436f-8d8d-2c8bca17a138")]
+[assembly: Guid("efdfb9fb-9bdf-44a4-9bf6-bf38cf7826be")]
 
 // Version information for an assembly consists of the following four values:
 //
